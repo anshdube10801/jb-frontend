@@ -1,28 +1,26 @@
 import React, { useState } from 'react';
-import OtpPopup from './otpPopup';
 import axios from 'axios';
+import OtpPopup from './otpPopup';
 
 const SignupForm = () => {
-  
   const [activeTab, setActiveTab] = useState('student');
   const [openOtpPopup, setOpenOtpPopup] = useState(false);
   const [userData, setUserData] = useState({});
 
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setUserData((prevData) => ({ ...prevData, [id]: value }));
+  };
+
   const openModal = async (e) => {
     e.preventDefault();
 
-    const form = e.target.closest('form');
-    const formData = new FormData(form);
-    const data = {};
-    formData.forEach((value, key) => {
-      data[key] = value;
-    });
-
-    setUserData(data);
-
     try {
-      const endpoint = activeTab === 'student' ? '/signup/students' : '/signup/alumni';
-      await axios.post(endpoint, { email: data.email });
+      const endpoint = activeTab === 'student' 
+        ? 'http://localhost:5000/signup/students' 
+        : 'http://localhost:5000/signup/alumni';
+
+      await axios.post(endpoint, { email: userData.email });
 
       // Open OTP modal
       setOpenOtpPopup(true);
@@ -33,11 +31,17 @@ const SignupForm = () => {
 
   const handleOtpSubmit = async (otp) => {
     try {
-      const endpoint = activeTab === 'student' ? '/signup/verify-student-otp' : '/signup/verify-alumni-otp';
-      await axios.post(endpoint, { email: userData.email, otp });
+      const verifyEndpoint = activeTab === 'student' 
+        ? 'http://localhost:5000/signup/verify-student-otp' 
+        : 'http://localhost:5000/signup/verify-alumni-otp';
+      
+      await axios.post(verifyEndpoint, { email: userData.email, otp });
 
       // Save user data to the database
-      const saveEndpoint = activeTab === 'student' ? '/signup/students' : '/signup/alumni';
+      const saveEndpoint = activeTab === 'student' 
+        ? 'http://localhost:5000/signup/students' 
+        : 'http://localhost:5000/signup/alumni';
+      
       await axios.post(saveEndpoint, userData);
 
       alert('Registration successful!');
@@ -49,8 +53,6 @@ const SignupForm = () => {
   };
 
   return (
-    <>
-
     <div
       className="min-h-screen bg-cover bg-center flex items-center justify-center"
       style={{
@@ -81,182 +83,105 @@ const SignupForm = () => {
         </div>
 
         {/* Form */}
-        {activeTab === 'alumni' ? (
-          <form onSubmit={openModal}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="name" className="block text-gray-700">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-gray-700">Personal Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="yourname@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-gray-700">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="123-456-7890"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="grad-year" className="block text-gray-700">Graduation Year</label>
-                <input
-                  type="number"
-                  id="grad-year"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="2020"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="degree" className="block text-gray-700">Degree/Major</label>
-                <input
-                  type="text"
-                  id="degree"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="B.Sc Computer Science"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="occupation" className="block text-gray-700">Current Occupation</label>
-                <input
-                  type="text"
-                  id="occupation"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="Software Engineer at XYZ Corp"
-                  required
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label htmlFor="linkedin" className="block text-gray-700">LinkedIn Profile (Optional)</label>
+        <form onSubmit={openModal}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="name" className="block text-gray-700">Full Name</label>
               <input
-                type="url"
-                id="linkedin"
+                type="text"
+                id="name"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                placeholder="https://www.linkedin.com/in/your-profile"
+                placeholder={activeTab === 'alumni' ? "John Doe" : "Jane Doe"}
+                onChange={handleInputChange}
                 required
               />
             </div>
-            <div className="mb-4">
-              <label htmlFor="document" className="block text-gray-700">Upload Verification Document (Degree Certificate)</label>
+            <div>
+              <label htmlFor="email" className="block text-gray-700">
+                {activeTab === 'alumni' ? "Personal Email" : "College Email"}
+              </label>
               <input
-                type="file"
-                id="document"
+                type="email"
+                id="email"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder={activeTab === 'alumni' ? "yourname@example.com" : "yourname@college.edu"}
+                onChange={handleInputChange}
                 required
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="password" className="block text-gray-700">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="********"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="confirm-password" className="block text-gray-700">Confirm Password</label>
-                <input
-                  type="password"
-                  id="confirm-password"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="********"
-                  required
-                />
-              </div>
+            <div>
+              <label htmlFor="phone" className="block text-gray-700">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder="123-456-7890"
+                onChange={handleInputChange}
+                required
+              />
             </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-            >
-              Sign Up as Alumni
-            </button>
-          </form>
-        ) : (
-          /* Current Student Form */
-          <form onSubmit={openModal}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="name" className="block text-gray-700">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="Jane Doe"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="college-email" className="block text-gray-700">College Email</label>
-                <input
-                  type="email"
-                  id="college-email"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="yourname@college.edu"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-gray-700">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="123-456-7890"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="enrollment-year" className="block text-gray-700">Enrollment Year</label>
-                <input
-                  type="number"
-                  id="enrollment-year"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="2022"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="graduation-year" className="block text-gray-700">Expected Graduation Year</label>
-                <input
-                  type="number"
-                  id="graduation-year"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="2026"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="degree" className="block text-gray-700">Degree/Major</label>
-                <input
-                  type="text"
-                  id="degree"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="B.Sc Computer Science"
-                  required
-                />
-              </div>
+            <div>
+              <label htmlFor={activeTab === 'alumni' ? "grad-year" : "enrollment-year"} className="block text-gray-700">
+                {activeTab === 'alumni' ? "Graduation Year" : "Enrollment Year"}
+              </label>
+              <input
+                type="number"
+                id={activeTab === 'alumni' ? "grad-year" : "enrollment-year"}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder={activeTab === 'alumni' ? "2020" : "2022"}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor={activeTab === 'alumni' ? "degree" : "graduation-year"} className="block text-gray-700">
+                {activeTab === 'alumni' ? "Degree/Major" : "Expected Graduation Year"}
+              </label>
+              <input
+                type="text"
+                id={activeTab === 'alumni' ? "degree" : "graduation-year"}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder={activeTab === 'alumni' ? "B.Sc Computer Science" : "2026"}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            {activeTab === 'alumni' && (
+              <>
+                <div>
+                  <label htmlFor="occupation" className="block text-gray-700">Current Occupation</label>
+                  <input
+                    type="text"
+                    id="occupation"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                    placeholder="Software Engineer at XYZ Corp"
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="linkedin" className="block text-gray-700">LinkedIn Profile (Optional)</label>
+                  <input
+                    type="url"
+                    id="linkedin"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                    placeholder="https://www.linkedin.com/in/your-profile"
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="document" className="block text-gray-700">Upload Verification Document (Degree Certificate)</label>
+                  <input
+                    type="file"
+                    id="document"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
+            {activeTab === 'student' && (
               <div>
                 <label htmlFor="student-id" className="block text-gray-700">Student ID</label>
                 <input
@@ -264,34 +189,48 @@ const SignupForm = () => {
                   id="student-id"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
                   placeholder="123456789"
+                  onChange={handleInputChange}
                   required
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="password" className="block text-gray-700">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
-                  placeholder="********"
-                  required
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label htmlFor="password" className="block text-gray-700">Password</label>
+              <input
+                type="password"
+                id="password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder="********"
+                onChange={handleInputChange}
+                required
               />
             </div>
+            <div>
+              <label htmlFor="confirm-password" className="block text-gray-700">Confirm Password</label>
+              <input
+                type="password"
+                id="confirm-password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
+                placeholder="********"
+                onChange={handleInputChange}
+                required
+              />
             </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-            >
-              Sign Up as Current Student
-            </button>
-          </form>
-        )}
+          </div>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold"
+          >
+            Sign Up
+          </button>
+        </form>
       </div>
+      {openOtpPopup && (
+        <OtpPopup onClose={() => setOpenOtpPopup(false)} onSubmit={handleOtpSubmit} />
+      )}
     </div>
-        <OtpPopup openOtpPopup={openOtpPopup} setOpenOtpPopup={setOpenOtpPopup} handleOtpSubmit={handleOtpSubmit}/>
-    </>
   );
 };
 
